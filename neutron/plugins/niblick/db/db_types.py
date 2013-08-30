@@ -1,5 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
-# Copyright 2012 OpenStack Foundation.
+#
+# Copyright 2012, OpenStack Foundation.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,21 +14,17 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from sqlalchemy import types as sql_types
 
-from neutron.common.exceptions import NeutronException
-
-
-class NiblickException(NeutronException):
-    pass
+from neutron.openstack.common import jsonutils
 
 
-class NoMoreResources(NiblickException):
-    message = _('There are no available resources of type "%(resource_type)s"')
+class JsonBlob(sql_types.TypeDecorator):
 
+    impl = sql_types.Text
 
-class WrongResourceId(NiblickException):
-    message = _('Wrong resource ID "%(resource_id)s"')
+    def process_bind_param(self, value, dialect):
+        return jsonutils.dumps(value)
 
-
-class WrongObjectId(NiblickException):
-    message = _('Wrong object ID "%(object_id)s"')
+    def process_result_value(self, value, dialect):
+        return jsonutils.loads(value)
