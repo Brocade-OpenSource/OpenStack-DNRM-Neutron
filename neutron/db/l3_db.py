@@ -667,15 +667,15 @@ class L3_NAT_db_mixin(l3.RouterPluginBase):
 
         router_id = floatingip_db['router_id']
         if router_id:
-            l3_rpc_agent_api.L3AgentNotify.routers_updated(
-                context, [router_id],
-                'create_floatingip')
+            self.router_assoc_floatingip(context, router_id, floatingip_db,
+                                         operation='create_floatingip')
         return self._make_floatingip_dict(floatingip_db)
 
     def update_floatingip(self, context, id, floatingip):
         fip = floatingip['floatingip']
         with context.session.begin(subtransactions=True):
             floatingip_db = self._get_floatingip(context, id)
+            old_floatingip = self._make_floatingip_dict(floatingip_db)
             fip['tenant_id'] = floatingip_db['tenant_id']
             fip['id'] = id
             fip_port_id = floatingip_db['floating_port_id']
@@ -683,19 +683,19 @@ class L3_NAT_db_mixin(l3.RouterPluginBase):
             self._update_fip_assoc(context, fip, floatingip_db,
                                    self.get_port(context.elevated(),
                                                  fip_port_id))
-        router_ids = []
         if before_router_id:
-            router_ids.append(before_router_id)
+            self.router_dissoc_floatingip(context, before_router_id,
+                                          old_floatingip,
+                                          operation='update_floatingip')
         router_id = floatingip_db['router_id']
-        if router_id and router_id != before_router_id:
-            router_ids.append(router_id)
-        if router_ids:
-            l3_rpc_agent_api.L3AgentNotify.routers_updated(context, router_ids,
-                                                           'update_floatingip')
+        if router_id:
+            self.router_assoc_floatingip(context, router_id, floatingip_db,
+                                         operation='update_floatingip')
         return self._make_floatingip_dict(floatingip_db)
 
     def delete_floatingip(self, context, id):
         floatingip = self._get_floatingip(context, id)
+        floatingip_data = self._make_floatingip_dict(floatingip)
         router_id = floatingip['router_id']
         with context.session.begin(subtransactions=True):
             context.session.delete(floatingip)
@@ -703,9 +703,8 @@ class L3_NAT_db_mixin(l3.RouterPluginBase):
                              floatingip['floating_port_id'],
                              l3_port_check=False)
         if router_id:
-            l3_rpc_agent_api.L3AgentNotify.routers_updated(
-                context, [router_id],
-                'delete_floatingip')
+            self.router_dissoc_floatingip(context, router_id, floatingip_data,
+                                          operation='delete_floatingip')
 
     def get_floatingip(self, context, id, fields=None):
         floatingip = self._get_floatingip(context, id)
@@ -763,6 +762,7 @@ class L3_NAT_db_mixin(l3.RouterPluginBase):
             try:
                 fip_qry = context.session.query(FloatingIP)
                 floating_ip = fip_qry.filter_by(fixed_port_id=port_id).one()
+                old_floatingip = self._make_floatingip_dict(floating_ip)
                 router_id = floating_ip['router_id']
                 floating_ip.update({'fixed_port_id': None,
                                     'fixed_ip_address': None,
@@ -774,8 +774,7 @@ class L3_NAT_db_mixin(l3.RouterPluginBase):
                 raise Exception(_('Multiple floating IPs found for port %s')
                                 % port_id)
         if router_id:
-            l3_rpc_agent_api.L3AgentNotify.routers_updated(
-                context, [router_id])
+            self.router_dissoc_floatingip(context, router_id, old_floatingip)
 
     def _network_is_external(self, context, net_id):
         try:
@@ -984,3 +983,13 @@ class L3_NAT_db_mixin(l3.RouterPluginBase):
             raise q_exc.TooManyExternalNetworks()
         else:
             return nets[0]['id'] if nets else None
+
+    def router_assoc_floatingip(self, context, router_id, floatingip,
+                                operation=None):
+        l3_rpc_agent_api.L3AgentNotify.routers_updated(
+            context, [router_id], operation)
+
+    def router_dissoc_floatingip(self, context, router_id, floatingip,
+                                 operation=None):
+        l3_rpc_agent_api.L3AgentNotify.routers_updated(
+            context, [router_id], operation)
