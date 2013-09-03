@@ -15,20 +15,26 @@
 #    under the License.
 
 import abc
+import copy
 
 from oslo.config import cfg
 
+from neutron.openstack.common.importutils import import_class
 from neutron.openstack.common.uuidutils import generate_uuid
 from neutron.plugins.niblick import exceptions
 
 
-instances_opts = [
+policy_opts = [
     cfg.DictOpt('instances', default={},
-                help=_("Dictionary of instances ids to IP mappings"))
+                help=_("Dictionary of instances ids to IP mappings")),
+    cfg.StrOpt(
+        'policy_driver',
+        default="neutron.plugins.niblick.policy.SimplePolicyDriver",
+        help=_("Niblick Policy driver"))
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(instances_opts, "niblick")
+CONF.register_opts(policy_opts, "niblick")
 
 
 class PolicyAPI(object):
@@ -44,38 +50,45 @@ class PolicyAPI(object):
         pass
 
 
-def create_resource_for_inst(res_type, instance_id, instance_ip):
-    """Helper function for SupervisorLessPolicyDriver"""
-    uuid = generate_uuid()
-    return (uuid, {'id': uuid,
-                   'type': res_type,
-                   'metadata': {'instance_id': instance_id,
-                                'instance_ip': instance_ip},
-                   'allocated': False,
-                   'descriptor': 'com.vyatta.vm'})
-
-
-class SupervisorLessPolicyDriver(PolicyAPI):
+class SimplePolicyDriver(PolicyAPI):
     """Proof-of-concept Policy driver"""
 
-    resource_type = 'router'
+    def _create_resource(self, resource_type, instance_id, instance_ip):
+        """Helper function for SupervisorLessPolicyDriver"""
+        uuid = generate_uuid()
+        return (uuid, {'resource_id': uuid,
+                       'resource_type': resource_type,
+                       'resource_metadata': {'instance_id': instance_id,
+                                             'instance_ip': instance_ip},
+                       'allocated': False,
+                       'resource_descriptor': 'com.vyatta.vm'})
 
     def __init__(self):
         res = []
-        for inst_id, inst_ip in CONF.niblick.instances.items():
-            res.append(create_resource_for_inst(self.resource_type, inst_id,
-                                                inst_ip))
+        for inst_id, inst_ip in CONF.niblick.instances.iteritems():
+            res.append(self._create_resource('router', inst_id, inst_ip))
         self._resources = dict(res)
 
     def acquire_resource(self, context, resource_type):
-        for id_, res in self._resources.iteritems():
-            if not res['allocated'] and res['type'] == resource_type:
+        for res in self._resources.itervalues():
+            if not res['allocated'] and res['resource_type'] == resource_type:
                 res['allocated'] = True
-                return res
-        raise exceptions.NoMoreResources()
+                return copy.deepcopy(res)
+        raise exceptions.NoMoreResources(resource_type=resource_type)
 
     def release_resource(self, context, resource_id):
         try:
             self._resources[resource_id]['allocated'] = False
         except KeyError:
-            raise exceptions.WrongResourceId()
+            raise exceptions.WrongResourceId(resource_id=resource_id)
+
+
+class PolicyManager(PolicyAPI):
+    def __init__(self):
+        self.policy_driver = import_class(CONF.niblick.policy_driver)()
+
+    def acquire_resource(self, context, resource_type):
+        return self.policy_driver.acquire_resource(context, resource_type)
+
+    def release_resource(self, context, resource_id):
+        return self.policy_driver.release_resource(context, resource_id)

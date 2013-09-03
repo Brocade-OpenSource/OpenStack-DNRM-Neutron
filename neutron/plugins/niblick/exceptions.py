@@ -22,8 +22,8 @@ class NiblickException(NeutronException):
 
 
 class NoMoreResources(NiblickException):
-    message = _('There are no available resources')
+    message = _('There are no available resources of type "%(resource_type)s"')
 
 
 class WrongResourceId(NiblickException):
-    message = _('Wrong resource ID')
+    message = _('Wrong resource ID "%(resource_id)s"')
