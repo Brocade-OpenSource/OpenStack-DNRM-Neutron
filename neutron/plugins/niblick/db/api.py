@@ -14,9 +14,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from neutron.openstack.common import timeutils
 from sqlalchemy.orm import exc as sa_exc
 
-from neutron.plugins.niblick.db import niblick_models_v2 as models
+from neutron.plugins.niblick.db import models
 from neutron.plugins.niblick import exceptions
 
 
@@ -35,7 +36,7 @@ def binding_add(context, values):
     with session.begin(subtransactions=True):
         obj = models.NiblickBinding()
         obj.update(values)
-        obj.save(session)
+        session.add(obj)
         return obj
 
 
@@ -57,7 +58,7 @@ def binding_update(context, object_id, values):
     with session.begin(subtransactions=True):
         obj = binding_get(context, object_id)
         obj.update(values)
-        obj.save(session)
+        session.add(obj)
         return obj
 
 
@@ -65,4 +66,6 @@ def binding_delete(context, object_id):
     session = context.session
     with session.begin(subtransactions=True):
         obj = binding_get(context, object_id)
-        obj.soft_delete(session)
+        obj['deleted'] = obj['id']
+        obj['deleted_at'] = timeutils.utcnow()
+        session.add(obj)

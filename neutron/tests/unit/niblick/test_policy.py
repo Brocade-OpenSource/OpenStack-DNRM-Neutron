@@ -66,23 +66,21 @@ class PolicyManagerTestCase(base.BaseTestCase):
                           "neutron.plugins.niblick.policy."
                           "SimplePolicyDriver",
                           'niblick')
-        self.acquire_resource = mock.patch(
+        m = mock.patch(
             'neutron.plugins.niblick.policy.SimplePolicyDriver.'
             'acquire_resource',
             return_value={'allocated': True})
-        self.release_resource = mock.patch(
+        m.start()
+        self.addCleanup(m.stop)
+
+        m = mock.patch(
             'neutron.plugins.niblick.policy.SimplePolicyDriver.'
             'release_resource',
             return_value=None)
+        m.start()
+        self.addCleanup(m.stop)
 
-        self.acquire_resource.start()
-        self.release_resource.start()
         self.policy = policy.PolicyManager()
-
-    def tearDown(self):
-        self.acquire_resource.stop()
-        self.release_resource.stop()
-        super(PolicyManagerTestCase, self).tearDown()
 
     def test_policy_driver_class(self):
         self.assertIsInstance(self.policy.policy_driver,

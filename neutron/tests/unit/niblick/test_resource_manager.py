@@ -30,43 +30,40 @@ class ResourceManagerrTestCase(base.BaseTestCase):
                     'resource_descriptor': 'com.vyatta.vm',
                     'resource_meta': {}}
 
-        self.binding_add = mock.patch('neutron.plugins.niblick.db.'
-                                      'niblick_db_v2.binding_add',
-                                      return_value=self.obj)
-        self.binding_get = mock.patch('neutron.plugins.niblick.db.'
-                                      'niblick_db_v2.binding_get',
-                                      return_value=self.obj)
-        self.binding_update = mock.patch('neutron.plugins.niblick.db.'
-                                         'niblick_db_v2.binding_update',
-                                         return_value=self.obj)
-        self.binding_delete = mock.patch('neutron.plugins.niblick.db.'
-                                         'niblick_db_v2.binding_delete',
-                                         return_value=None)
-        self.acquire_resource = mock.patch(
+        m = mock.patch('neutron.plugins.niblick.db.api.binding_add',
+                       return_value=self.obj)
+        m.start()
+        self.addCleanup(m.stop)
+
+        m = mock.patch('neutron.plugins.niblick.db.api.binding_get',
+                       return_value=self.obj)
+        m.start()
+        self.addCleanup(m.stop)
+
+        m = mock.patch('neutron.plugins.niblick.db.api.binding_update',
+                       return_value=self.obj)
+        m.start()
+        self.addCleanup(m.stop)
+
+        m = mock.patch('neutron.plugins.niblick.db.api.binding_delete',
+                       return_value=None)
+        m.start()
+        self.addCleanup(m.stop)
+
+        m = mock.patch(
             'neutron.plugins.niblick.policy.PolicyManager.acquire_resource',
             return_value=self.obj)
-        self.release_resource = mock.patch(
+        self.acquire_resource = m.start()
+        self.addCleanup(m.stop)
+
+        m = mock.patch(
             'neutron.plugins.niblick.policy.PolicyManager.release_resource',
             return_value=None)
-
-        self.binding_add.start()
-        self.binding_get.start()
-        self.binding_update.start()
-        self.binding_delete.start()
-        self.acquire_resource_mock = self.acquire_resource.start()
-        self.release_resource_mock = self.release_resource.start()
+        self.release_resource = m.start()
+        self.addCleanup(m.stop)
 
         self.rm = resource.ResourceManager()
         self.context = context.get_admin_context()
-
-    def tearDown(self):
-        self.binding_add.stop()
-        self.binding_get.stop()
-        self.binding_update.stop()
-        self.binding_delete.stop()
-        self.acquire_resource.stop()
-        self.release_resource.stop()
-        super(ResourceManagerrTestCase, self).tearDown()
 
     def _allocate(self):
         with self.rm.allocate_resource(self.context, 'router') as resource:
@@ -78,7 +75,7 @@ class ResourceManagerrTestCase(base.BaseTestCase):
 
     def test_allocate_resource(self):
         self.assertIsNone(self._allocate())
-        self.assertEqual(self.acquire_resource_mock.call_count, 1)
+        self.assertEqual(self.acquire_resource.call_count, 1)
 
     def test_allocate_resource_error_unbind(self):
         class FakeException(Exception):
@@ -89,11 +86,11 @@ class ResourceManagerrTestCase(base.BaseTestCase):
                 raise FakeException()
 
         self.assertRaises(FakeException, test)
-        self.assertEqual(self.acquire_resource_mock.call_count, 1)
-        self.assertEqual(self.release_resource_mock.call_count, 1)
+        self.assertEqual(self.acquire_resource.call_count, 1)
+        self.assertEqual(self.release_resource.call_count, 1)
 
     def test_deallocate_resource(self):
         self._allocate()
         self.assertIsNone(self._deallocate())
-        self.assertEqual(self.acquire_resource_mock.call_count, 1)
-        self.assertEqual(self.release_resource_mock.call_count, 1)
+        self.assertEqual(self.acquire_resource.call_count, 1)
+        self.assertEqual(self.release_resource.call_count, 1)

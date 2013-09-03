@@ -17,7 +17,7 @@
 import contextlib
 
 from neutron.openstack.common import excutils
-from neutron.plugins.niblick.db import niblick_db_v2 as db
+from neutron.plugins.niblick.db import api as db_api
 from neutron.plugins.niblick import exceptions as exc
 from neutron.plugins.niblick import policy
 
@@ -43,12 +43,12 @@ class ResourceManager(object):
         res = self.get_resource(context, object_id)
         yield res
         self._pm.release_resource(context, res['resource_id'])
-        db.binding_delete(context, res['object_id'])
+        db_api.binding_delete(context, res['object_id'])
 
     def bind_object(self, context, object_id, resource):
         resource['object_id'] = object_id
-        resource.update(dict(db.binding_add(context, resource)))
+        resource.update(dict(db_api.binding_add(context, resource)))
 
     def get_resource(self, context, object_id):
-        obj = db.binding_get(context, object_id)
+        obj = db_api.binding_get(context, object_id)
         return dict(obj)

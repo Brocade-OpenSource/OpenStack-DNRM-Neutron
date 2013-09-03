@@ -20,7 +20,7 @@ from sqlalchemy import schema
 
 from neutron.db import model_base
 from neutron.openstack.common.db.sqlalchemy import models
-from neutron.plugins.niblick.db import db_types
+from neutron.plugins.niblick.db import types as db_types
 
 
 class NiblickBinding(model_base.BASEV2,
@@ -41,7 +41,3 @@ class NiblickBinding(model_base.BASEV2,
 
     def __repr__(self):
         return "<NiblickBinding(%s,%s)>" % (self.object_id, self.resource_id)
-
-    def save(self, session):
-        session.add(self)
-        session.flush()

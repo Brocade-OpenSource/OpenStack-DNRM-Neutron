@@ -17,7 +17,7 @@
 from neutron import context
 from neutron.db import api as db_api
 from neutron.openstack.common.db import exception as db_exc
-from neutron.plugins.niblick.db import niblick_db_v2 as api
+from neutron.plugins.niblick.db import api
 from neutron.plugins.niblick import exceptions
 from neutron.tests import base
 
@@ -26,16 +26,13 @@ class BindingDBTestCase(base.BaseTestCase):
     def setUp(self):
         super(BindingDBTestCase, self).setUp()
         db_api.configure_db()
+        self.addCleanup(db_api.clear_db)
         self.context = context.get_admin_context()
         resource = {'object_id': 'fake-object-id',
                     'resource_type': 'fake-resource-type',
                     'resource_id': 'fake-resource-id',
                     'resource_descriptor': 'com.vyatta.vm'}
         self.obj = dict(api.binding_add(self.context, resource))
-
-    def tearDown(self):
-        db_api.clear_db()
-        super(BindingDBTestCase, self).tearDown()
 
     def test_add_dublicate(self):
         self.assertRaises(db_exc.DBDuplicateEntry, api.binding_add,
