@@ -1,4 +1,5 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
+
 # Copyright 2012 OpenStack Foundation.
 # All Rights Reserved.
 #
@@ -13,21 +14,3 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-from neutron.common.exceptions import NeutronException
-
-
-class NiblickException(NeutronException):
-    pass
-
-
-class NoMoreResources(NiblickException):
-    message = _('There are no available resources of type "%(resource_type)s"')
-
-
-class WrongResourceId(NiblickException):
-    message = _('Wrong resource ID "%(resource_id)s"')
-
-
-class WrongObjectId(NiblickException):
-    message = _('Wrong object ID "%(object_id)s"')
