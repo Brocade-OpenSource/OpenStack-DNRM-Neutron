@@ -14,8 +14,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import mock
 from oslo.config import cfg
 
+from neutron.db import api as db
 from neutron.plugins.niblick import plugin_manager
 from neutron.tests import base
 
@@ -26,22 +28,21 @@ class FakePlugin(object):
     pass
 
 
-class SimplePolicyDriverTestCase(base.BaseTestCase):
+class PluginManagerTestCase(base.BaseTestCase):
     def setUp(self):
-        super(SimplePolicyDriverTestCase, self).setUp()
-        klass = 'neutron.tests.unit.niblick.test_plugin_manager.FakePlugin'
-        self.plugins = {'fake-{}'.format(i): klass for i in range(10)}
-        self.plugins['fake-l2'] = klass
+        super(PluginManagerTestCase, self).setUp()
+        m = mock.patch('neutron.plugins.niblick.plugin_manager.PluginManager.'
+                       '_load_plugin', return_value=FakePlugin())
+        self.load_plugin = m.start()
+        self.addCleanup(m.stop)
+        self.plugins = {str(i): str(i) for i in range(9)}
+        self.plugins['fake-l2'] = 'fake-l2'
         CONF.set_override('plugin_list', self.plugins, 'niblick')
         CONF.set_override('l2_descriptor', 'fake-l2', 'niblick')
         self.plugin_manager = plugin_manager.PluginManager()
 
     def test_plugins_count(self):
-        self.assertEqual(len(self.plugins), len(self.plugin_manager))
-
-    def test_plugins_names(self):
-        for name in self.plugins:
-            self.assertTrue(name in self.plugin_manager)
+        self.assertEqual(10, len(self.plugin_manager))
 
     def test_plugins_class(self):
         for plugin in self.plugin_manager.itervalues():
@@ -52,5 +53,11 @@ class SimplePolicyDriverTestCase(base.BaseTestCase):
 
     def test_plugins_l2_class(self):
         self.assertIsInstance(
-            self.plugin_manager[self.plugin_manager.l2_descriptor],
-            FakePlugin)
+            self.plugin_manager[self.plugin_manager.l2_descriptor], FakePlugin)
+
+    def test_test_db_engine(self):
+        self.assertIsNone(db._ENGINE)
+
+    def test_load_plugin_input(self):
+        expected = [mock.call(value) for value in self.plugins.values()]
+        self.assertListEqual(self.load_plugin.call_args_list, expected)
