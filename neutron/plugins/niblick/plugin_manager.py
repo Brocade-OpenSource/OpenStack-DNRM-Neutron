@@ -14,11 +14,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 from oslo.config import cfg
 
 from neutron.db import api as db
-from neutron.openstack.common.importutils import import_class
+from neutron.openstack.common import importutils
 from neutron.openstack.common import log as logging
 from neutron.plugins.niblick import common
 
@@ -54,7 +53,7 @@ class PluginManager(dict):
 
     def _load_plugin(self, plugin_provider):
         LOG.debug(_("Plugin location: %s"), plugin_provider)
-        plugin = import_class(plugin_provider)
+        plugin = importutils.import_class(plugin_provider)
         return plugin()
 
     @property
