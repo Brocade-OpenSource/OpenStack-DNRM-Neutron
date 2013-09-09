@@ -50,6 +50,13 @@ class ResourceManagerrTestCase(base.BaseTestCase):
         m.start()
         self.addCleanup(m.stop)
 
+        self.fake_descriptors = ['fake-descriptor-1', 'fake-descriptor-1']
+        m = mock.patch('neutron.plugins.niblick.db.api.'
+                       'binding_get_descriptors',
+                       return_value=self.fake_descriptors)
+        m.start()
+        self.addCleanup(m.stop)
+
         m = mock.patch(
             'neutron.plugins.niblick.policy.PolicyManager.acquire_resource',
             return_value=self.obj)
@@ -94,3 +101,8 @@ class ResourceManagerrTestCase(base.BaseTestCase):
         self.assertIsNone(self._deallocate())
         self.assertEqual(self.acquire_resource.call_count, 1)
         self.assertEqual(self.release_resource.call_count, 1)
+
+    def test_get_descriptors(self):
+        descriptors = self.rm.get_descriptors(self.context,
+                                              'fake-resource-type')
+        self.assertListEqual(self.fake_descriptors, descriptors)

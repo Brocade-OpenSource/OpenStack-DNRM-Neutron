@@ -52,3 +52,8 @@ class ResourceManager(object):
     def get_resource(self, context, object_id):
         obj = db_api.binding_get(context, object_id)
         return dict(obj)
+
+    def get_descriptors(self, context, resource_type):
+        descriptors = db_api.binding_get_descriptors(
+            context, resource_type)
+        return descriptors
