@@ -61,7 +61,7 @@ class SimplePolicyDriver(PolicyAPI):
                        'resource_metadata': {'instance_id': instance_id,
                                              'instance_ip': instance_ip},
                        'allocated': False,
-                       'resource_descriptor': 'com.vyatta.vm'})
+                       'resource_descriptor': 'linuxbridge'})
 
     def __init__(self):
         res = []
