@@ -35,7 +35,7 @@ from alembic import op
 import sqlalchemy as sa
 
 from neutron.db import migration
-from neutron.plugins.niblick.db import db_types
+from neutron.plugins.niblick.db import types as db_types
 
 
 def upgrade(active_plugin=None, options=None):
