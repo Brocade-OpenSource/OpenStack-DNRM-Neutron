@@ -29,8 +29,8 @@ policy_opts = [
                 help=_("Dictionary of instances ids to IP mappings")),
     cfg.StrOpt(
         'policy_driver',
-        default="neutron.plugins.niblick.policy.SimplePolicyDriver",
-        help=_("Niblick Policy driver"))
+        default="neutron.plugins.niblick.supervisor_policy_driver."
+                "SupervisorPolicyDriver", help=_("Niblick Policy driver"))
 ]
 
 CONF = cfg.CONF
