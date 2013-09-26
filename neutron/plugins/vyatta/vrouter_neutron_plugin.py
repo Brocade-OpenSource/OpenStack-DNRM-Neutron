@@ -17,16 +17,17 @@ from neutron.plugins.vyatta import config  # noqa
 from neutron.plugins.vyatta import vrouter_control as control
 from neutron.plugins.vyatta import vrouter_db_v2
 
-ROUTER_ADDRESS = 'vrouter:address'
-ROUTER_INSTANCE = 'vrouter:instance'
+ROUTER_ADDRESS = 'address'
+ROUTER_INSTANCE = 'instance_id'
 LOG = logging.getLogger(__name__)
 
 
 class VyattaVRouterL3Mixin(l3.RouterPluginBase):
     def create_router(self, context, router):
         r = router['router']
-        address = r.get(ROUTER_ADDRESS)
-        instance_id = r.get(ROUTER_INSTANCE)
+        m = r.get('metadata', {})
+        address = m.get(ROUTER_ADDRESS)
+        instance_id = m.get(ROUTER_INSTANCE)
 
         # TODO(anfrolov): check that address is in management subnet
         if address is None or instance_id is None:
@@ -331,7 +332,8 @@ class VyattaVRouterL3Mixin(l3.RouterPluginBase):
                 interface_infos.append({
                     'mac_address': mac_address,
                     'ip_address': '{0}/{1}'.format(fip['ip_address'],
-                                                   ipnet.prefixlen)
+                                                   ipnet.prefixlen),
+                    'gateway_ip': subnet.gateway_ip
                 })
             except q_exc.SubnetNotFound:
                 pass
