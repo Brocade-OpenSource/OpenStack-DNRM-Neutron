@@ -71,3 +71,14 @@ class BindingDBTestCase(base.BaseTestCase):
         api.binding_delete(self.context, self.obj['object_id'])
         obj = dict(api.binding_add(self.context, self.obj))
         self.assertEqual(self.obj['object_id'], obj['object_id'])
+
+    def test_get_all_descriptors(self):
+        resource = {'object_id': 'fake-object-id-2',
+                    'resource_type': 'fake-resource-type',
+                    'resource_id': 'fake-resource-id-2',
+                    'resource_descriptor': 'com.vyatta.vm.2'}
+        self.obj = dict(api.binding_add(self.context, resource))
+        descriptors_in_db = api.binding_get_descriptors(
+            self.context, 'fake-resource-type')
+        descriptors = ['com.vyatta.vm', 'com.vyatta.vm.2']
+        self.assertListEqual(descriptors, descriptors_in_db)

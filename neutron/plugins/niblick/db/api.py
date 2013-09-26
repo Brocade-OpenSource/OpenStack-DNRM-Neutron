@@ -69,3 +69,11 @@ def binding_delete(context, object_id):
         obj['deleted'] = obj['id']
         obj['deleted_at'] = timeutils.utcnow()
         session.add(obj)
+
+
+def binding_get_descriptors(context, resource_type):
+    session = context.session
+    query = session.query(models.NiblickBinding.resource_descriptor).\
+        filter_by(resource_type=resource_type).\
+        group_by(models.NiblickBinding.resource_descriptor)
+    return [d for d, in query.all()]

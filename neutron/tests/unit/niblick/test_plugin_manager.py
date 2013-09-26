@@ -55,9 +55,5 @@ class PluginManagerTestCase(base.BaseTestCase):
         self.assertIsInstance(
             self.plugin_manager[self.plugin_manager.l2_descriptor], FakePlugin)
 
-    def test_test_db_engine(self):
+    def test_db_engine(self):
         self.assertIsNone(db._ENGINE)
-
-    def test_load_plugin_input(self):
-        expected = [mock.call(value) for value in self.plugins.values()]
-        self.assertListEqual(self.load_plugin.call_args_list, expected)
