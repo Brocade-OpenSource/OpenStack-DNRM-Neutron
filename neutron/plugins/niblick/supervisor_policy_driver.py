@@ -51,9 +51,9 @@ class SupervisorPolicyDriver(policy.PolicyAPI):
             content = jsonutils.loads(content)
         return content
 
-    def _list(self, resource_type):
-        search_opts = {'limit': 1, 'resource_type': resource_type,
-                       'processing': False, 'pool': True}
+    def _list(self, resource_class):
+        search_opts = {'limit': 1, 'class': resource_class,
+                       'processing': False, 'unused': True}
         query = urllib.urlencode(search_opts)
         url = '%(url)s?%(query)s' % {'url': self.url, 'query': query}
         resp = self._get(url)['resources']
@@ -66,19 +66,18 @@ class SupervisorPolicyDriver(policy.PolicyAPI):
         resp = self._get(url, 'PUT', body)
         return resp.get('resource')
 
-    def acquire_resource(self, context, resource_type):
-        if resource_type == 'com.router':
-            resources = self._list(resource_type)
-            if resources:
-                resource = resources[0]
-                resource = self._update(resource['id'], True)
-                res = {'resource_id': resource.pop('id'),
-                       'resource_type': resource_type,
-                       'allocated': resource.pop('allocated'),
-                       'resource_descriptor': resource.pop('type')}
-                res['resource_metadata'] = resource
-                return res
-        raise exceptions.NoMoreResources(resource_type=resource_type)
+    def acquire_resource(self, context, resource_class):
+        resources = self._list(resource_class)
+        if resources:
+            resource = resources[0]
+            resource = self._update(resource['id'], True)
+            res = {'resource_id': resource.pop('id'),
+                   'resource_type': resource_class,
+                   'allocated': resource.pop('allocated'),
+                   'resource_descriptor': resource.pop('type')}
+            res['resource_metadata'] = resource
+            return res
+        raise exceptions.NoMoreResources(resource_type=resource_class)
 
     def release_resource(self, context, resource_id):
         resp = self._update(resource_id, False)

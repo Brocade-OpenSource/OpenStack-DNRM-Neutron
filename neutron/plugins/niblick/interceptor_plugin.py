@@ -19,8 +19,7 @@ from neutron.db import l3_db
 from neutron.plugins.niblick import plugin_manager
 from neutron.plugins.niblick import resource
 
-# TODO(svilgelm): replace with "L3"
-ROUTER_OBJECT_TYPE = 'com.router'
+ROUTER_OBJECT_TYPE = 'L3'
 
 
 class Interceptor(l3_db.L3_NAT_db_mixin):

@@ -56,8 +56,8 @@ class SupervisorPolicyDriverTestCase(base.BaseTestCase):
             resp = self.policy._list('fake-resource-type')
             self.assertListEqual(resources, resp)
             get.assert_called_once_with(self.policy.url +
-                                        '?processing=False&limit=1&pool=True&'
-                                        'resource_type=fake-resource-type')
+                                        '?unused=True&processing=False&'
+                                        'limit=1&class=fake-resource-type')
 
     def test_update(self):
         with self._mock('_get') as get:
@@ -75,10 +75,10 @@ class SupervisorPolicyDriverTestCase(base.BaseTestCase):
             self._mock('_update', {'id': 'fake-resource-id',
                                    'allocated': True,
                                    'type': 'fake-resource-type'}) as upd:
-            resp = self.policy.acquire_resource('fake-context', 'com.router')
+            resp = self.policy.acquire_resource('fake-context', 'L3')
             self.assertDictEqual(
                 resp, {'resource_id': 'fake-resource-id',
-                       'resource_type': 'com.router', 'allocated': True,
+                       'resource_type': 'L3', 'allocated': True,
                        'resource_descriptor': 'fake-resource-type',
                        'resource_metadata': {}})
             self.assertEqual(1, lst.call_count)
@@ -86,15 +86,11 @@ class SupervisorPolicyDriverTestCase(base.BaseTestCase):
             upd.assert_called_once_with('fake-resource-id', True)
 
     def test_acquire_resource_error_no_more_resource(self):
-        self.assertRaises(exceptions.NoMoreResources,
-                          self.policy.acquire_resource,
-                          context='fake-context',
-                          resource_type='fake-resource-type')
         with self._mock('_list', []):
             self.assertRaises(exceptions.NoMoreResources,
                               self.policy.acquire_resource,
                               context='fake-context',
-                              resource_type='com.router')
+                              resource_class='L3')
 
     def test_release_resource(self):
         with self._mock('_update', {'id': 1}):

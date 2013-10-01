@@ -66,7 +66,7 @@ class FakePolicyDriver(policy.SimplePolicyDriver):
         for descriptor in ('fake-l3-1', 'fake-l3-2'):
             uuid = uuidutils.generate_uuid()
             resource = {'resource_id': uuid,
-                        'resource_type': 'router',
+                        'resource_type': 'L3',
                         'resource_metadata': {},
                         'allocated': False,
                         'resource_descriptor': descriptor}
@@ -106,8 +106,7 @@ class InterceptorTestCase(base.BaseTestCase):
         self.assertIsInstance(pm, FakePluginManager)
 
     def test_get_all_plugins(self):
-        for plugin in self.interceptor._get_all_plugins(self.context,
-                                                        'router'):
+        for plugin in self.interceptor._get_all_plugins(self.context, 'L3'):
             self.assertIsInstance(plugin, FakeL3Plugin)
 
     def test_l2_create_port(self):

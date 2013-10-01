@@ -289,7 +289,8 @@ class VyattaVRouterDbTestCase(base.BaseTestCase):
         self.attach_interface_mock.assert_called_once_with(
             self.context, 'fake-port-id-1', 'fake-instance-id')
         self.configure_interface_mock.assert_called_once_with(
-            self.context, '8.8.8.8', [{'mac_address': 'aa:bb:cc:dd:ee:f1',
+            self.context, '8.8.8.8', [{'gateway_ip': '10.0.0.1',
+                                       'mac_address': 'aa:bb:cc:dd:ee:f1',
                                        'ip_address': '10.0.0.1/24'}])
 
     def test_add_router_interface_port_attach_fail(self):
@@ -305,7 +306,8 @@ class VyattaVRouterDbTestCase(base.BaseTestCase):
         self.attach_interface_mock.assert_called_once_with(
             self.context, ANY, 'fake-instance-id')
         self.configure_interface_mock.assert_called_once_with(
-            self.context, '8.8.8.8', [{'mac_address': ANY,
+            self.context, '8.8.8.8', [{'gateway_ip': '10.0.1.1',
+                                       'mac_address': ANY,
                                        'ip_address': '10.0.1.1/24'}])
 
     def test_remove_router_interface_invalid_data_fail(self):
@@ -343,7 +345,8 @@ class VyattaVRouterDbTestCase(base.BaseTestCase):
         self.detach_interface_mock.assert_called_once_with(
             self.context, ANY, 'fake-instance-id')
         self.deconfigure_interface_mock.assert_called_once_with(
-            self.context, '8.8.8.8', [{'mac_address': 'aa:bb:cc:dd:ee:f2',
+            self.context, '8.8.8.8', [{'gateway_ip': '10.0.2.1',
+                                       'mac_address': 'aa:bb:cc:dd:ee:f2',
                                        'ip_address': '10.0.2.1/24'}])
 
     def test_remove_router_interface_by_subnet(self):
@@ -357,7 +360,8 @@ class VyattaVRouterDbTestCase(base.BaseTestCase):
         self.detach_interface_mock.assert_called_once_with(
             self.context, ANY, 'fake-instance-id')
         self.deconfigure_interface_mock.assert_called_once_with(
-            self.context, '8.8.8.8', [{'mac_address': 'aa:bb:cc:dd:ee:f2',
+            self.context, '8.8.8.8', [{'gateway_ip': '10.0.2.1',
+                                       'mac_address': 'aa:bb:cc:dd:ee:f2',
                                        'ip_address': '10.0.2.1/24'}])
 
 
