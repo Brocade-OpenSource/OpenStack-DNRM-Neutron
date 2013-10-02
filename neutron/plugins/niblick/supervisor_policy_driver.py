@@ -53,7 +53,7 @@ class SupervisorPolicyDriver(policy.PolicyAPI):
 
     def _list(self, resource_class):
         search_opts = {'limit': 1, 'class': resource_class,
-                       'processing': False, 'unused': True}
+                       'processing': False, 'unused': False}
         query = urllib.urlencode(search_opts)
         url = '%(url)s?%(query)s' % {'url': self.url, 'query': query}
         resp = self._get(url)['resources']
