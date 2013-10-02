@@ -34,6 +34,7 @@ PLUGINS = {
     'nvp': 'neutron.plugins.nicira.NeutronPlugin.NvpPluginV2',
     'ovs': 'neutron.plugins.openvswitch.ovs_neutron_plugin.OVSNeutronPluginV2',
     'ryu': 'neutron.plugins.ryu.ryu_neutron_plugin.RyuNeutronPluginV2',
+    'niblick': 'neutron.plugins.niblick.interceptor_plugin.Interceptor'
 }
 
 L3_CAPABLE = [
@@ -43,6 +44,7 @@ L3_CAPABLE = [
     PLUGINS['nec'],
     PLUGINS['ovs'],
     PLUGINS['ryu'],
+    PLUGINS['niblick'],
 ]
 
 FOLSOM_QUOTA = [
@@ -50,6 +52,7 @@ FOLSOM_QUOTA = [
     PLUGINS['ml2'],
     PLUGINS['nvp'],
     PLUGINS['ovs'],
+    PLUGINS['niblick'],
 ]
 
 
@@ -74,7 +77,7 @@ def upgrade(active_plugin=None, options=None):
     if active_plugin in FOLSOM_QUOTA:
         common_ext_ops.upgrade_quota(options)
 
-    if active_plugin == PLUGINS['lbr']:
+    if active_plugin == PLUGINS['lbr'] or active_plugin == PLUGINS['niblick']:
         upgrade_linuxbridge()
     elif active_plugin == PLUGINS['ovs']:
         upgrade_ovs()
@@ -429,7 +432,7 @@ def upgrade_cisco():
 
 
 def downgrade(active_plugin=None, options=None):
-    if active_plugin == PLUGINS['lbr']:
+    if active_plugin == PLUGINS['lbr'] or active_plugin == PLUGINS['niblick']:
         downgrade_linuxbridge()
     elif active_plugin == PLUGINS['ovs']:
         downgrade_ovs()
