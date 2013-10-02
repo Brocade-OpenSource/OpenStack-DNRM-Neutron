@@ -47,7 +47,7 @@ def upgrade(active_plugin=None, options=None):
         sa.Column('router_id', sa.String(length=36), primary_key=True),
         sa.Column('ip_address', sa.String(length=16), nullable=False),
         sa.Column('instance_id', sa.String(length=36), nullable=False),
-        sa.ForeignKeyConstraint(['router_id'], ['routers.id'])
+        sa.ForeignKeyConstraint(['router_id'], ['routers.id'], ondelete='CASCADE')
     )
 
 
@@ -55,4 +55,4 @@ def downgrade(active_plugin=None, options=None):
     if not migration.should_run(active_plugin, migration_for_plugins):
         return
 
-    op.drop_table('niblick_bindings')
+    op.drop_table('routeraddresss')

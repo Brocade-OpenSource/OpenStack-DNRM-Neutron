@@ -52,7 +52,7 @@ def upgrade(active_plugin=None, options=None):
         sa.Column('object_id', sa.String(length=36), nullable=False),
         sa.Column('resource_type', sa.String(length=255), nullable=False),
         sa.Column('resource_id', sa.String(length=36), nullable=False),
-        sa.Column('resource_metadata', db_types.JsonBlob(length=255),
+        sa.Column('resource_metadata', db_types.JsonBlob(),
                   nullable=True),
         sa.Column('resource_descriptor', sa.String(length=255),
                   nullable=False),
