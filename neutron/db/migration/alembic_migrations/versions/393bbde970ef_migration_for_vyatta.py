@@ -47,7 +47,8 @@ def upgrade(active_plugin=None, options=None):
         sa.Column('router_id', sa.String(length=36), primary_key=True),
         sa.Column('ip_address', sa.String(length=16), nullable=False),
         sa.Column('instance_id', sa.String(length=36), nullable=False),
-        sa.ForeignKeyConstraint(['router_id'], ['routers.id'], ondelete='CASCADE')
+        sa.ForeignKeyConstraint(['router_id'], ['routers.id'],
+                                ondelete='CASCADE')
     )
 
 
