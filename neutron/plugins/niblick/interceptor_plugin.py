@@ -94,6 +94,18 @@ class Interceptor(l3_db.L3_NAT_db_mixin):
         plugin = self._get_plugin(context, router_id)
         plugin.remove_router_interface(context, router_id, interface_info)
 
+    def router_dissoc_floatingip(self, context, router_id, floatingip,
+                                 operation=None):
+        plugin = self._get_plugin(context, router_id)
+        plugin.router_dissoc_floatingip(context, router_id, floatingip,
+                                        operation)
+
+    def router_assoc_floatingip(self, context, router_id, floatingip,
+                                operation=None):
+        plugin = self._get_plugin(context, router_id)
+        plugin.router_assoc_floatingip(context, router_id, floatingip,
+                                       operation)
+
     # L2
 
     def __getattr__(self, name):
