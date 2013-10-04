@@ -17,6 +17,7 @@
 from oslo.config import cfg
 
 from neutron.db import api as db
+from neutron.openstack.common import excutils
 from neutron.openstack.common import importutils
 from neutron.openstack.common import log as logging
 from neutron.plugins.niblick import common
@@ -53,8 +54,13 @@ class PluginManager(dict):
 
     def _load_plugin(self, plugin_provider):
         LOG.debug(_("Plugin location: %s"), plugin_provider)
-        plugin = importutils.import_class(plugin_provider)
-        return plugin()
+        try:
+            plugin = importutils.import_class(plugin_provider)
+            return plugin()
+        except ImportError:
+            with excutils.save_and_reraise_exception():
+                LOG.exception(_('Load plugin error: %(provider)s'),
+                              provider=plugin_provider)
 
     @property
     def l2_descriptor(self):

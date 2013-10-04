@@ -19,10 +19,11 @@ import copy
 
 from oslo.config import cfg
 
+from neutron.openstack.common import excutils
 from neutron.openstack.common.importutils import import_class
+from neutron.openstack.common import log
 from neutron.openstack.common.uuidutils import generate_uuid
 from neutron.plugins.niblick import exceptions
-
 
 policy_opts = [
     cfg.DictOpt('instances', default={},
@@ -35,6 +36,8 @@ policy_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(policy_opts, "niblick")
+
+LOG = log.getLogger(__name__)
 
 
 class PolicyAPI(object):
@@ -80,7 +83,9 @@ class SimplePolicyDriver(PolicyAPI):
         try:
             self._resources[resource_id]['allocated'] = False
         except KeyError:
-            raise exceptions.WrongResourceId(resource_id=resource_id)
+            with excutils.save_and_reraise_exception():
+                LOG.exception(_('Release resource'))
+                raise exceptions.WrongResourceId(resource_id=resource_id)
 
 
 class PolicyManager(PolicyAPI):

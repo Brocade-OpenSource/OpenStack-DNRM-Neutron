@@ -17,9 +17,12 @@
 import contextlib
 
 from neutron.openstack.common import excutils
+from neutron.openstack.common import log
 from neutron.plugins.niblick.db import api as db_api
 from neutron.plugins.niblick import exceptions as exc
 from neutron.plugins.niblick import policy
+
+LOG = log.getLogger(__name__)
 
 
 class ResourceManager(object):
@@ -36,6 +39,7 @@ class ResourceManager(object):
                 raise exc.WrongObjectId(object_id=None)
         except Exception:
             with excutils.save_and_reraise_exception():
+                LOG.exception(_('Allocate resource'))
                 self._pm.release_resource(context, resource['resource_id'])
 
     @contextlib.contextmanager
