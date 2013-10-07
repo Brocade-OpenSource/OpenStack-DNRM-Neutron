@@ -32,8 +32,8 @@ class Interceptor(l3_db.L3_NAT_db_mixin):
         return self._plugin_manager[l2_descriptor]
 
     def _get_plugin(self, context, object_id):
-        resource = self._resource_manager.get_resource(context, object_id)
-        descriptor = resource['resource_descriptor']
+        res = self._resource_manager.get_resource(context, object_id)
+        descriptor = res['resource_descriptor']
         return self._plugin_manager[descriptor]
 
     def _get_all_plugins(self, context, resource_type):
@@ -48,14 +48,14 @@ class Interceptor(l3_db.L3_NAT_db_mixin):
         with self._resource_manager.allocate_resource(
             context,
             ROUTER_OBJECT_TYPE
-        ) as resource:
+        ) as res:
             metadata = router.get('metadata', {})
-            metadata.update(resource['resource_metadata'])
+            metadata.update(res['resource_metadata'])
             router['metadata'] = metadata
-            descriptor = resource['resource_descriptor']
+            descriptor = res['resource_descriptor']
             plugin = self._plugin_manager[descriptor]
             obj = plugin.create_router(context, router)
-            self._resource_manager.bind_object(context, obj['id'], resource)
+            self._resource_manager.bind_object(context, obj['id'], res)
             return obj
 
     def update_router(self, context, id, router):
@@ -92,7 +92,8 @@ class Interceptor(l3_db.L3_NAT_db_mixin):
 
     def remove_router_interface(self, context, router_id, interface_info):
         plugin = self._get_plugin(context, router_id)
-        plugin.remove_router_interface(context, router_id, interface_info)
+        return plugin.remove_router_interface(context, router_id,
+                                              interface_info)
 
     def router_dissoc_floatingip(self, context, router_id, floatingip,
                                  operation=None):
