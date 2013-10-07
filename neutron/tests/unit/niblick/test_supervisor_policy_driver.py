@@ -56,8 +56,9 @@ class SupervisorPolicyDriverTestCase(base.BaseTestCase):
             resp = self.policy._list('fake-resource-type')
             self.assertListEqual(resources, resp)
             get.assert_called_once_with(self.policy.url +
-                                        '?unused=False&processing=False&'
-                                        'limit=1&class=fake-resource-type')
+                                        '?unused=False&allocated=False&'
+                                        'processing=False&limit=1&'
+                                        'class=fake-resource-type')
 
     def test_update(self):
         with self._mock('_get') as get:
