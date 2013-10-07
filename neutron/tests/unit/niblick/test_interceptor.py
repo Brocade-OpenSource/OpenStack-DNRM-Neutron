@@ -14,6 +14,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import copy
+
 import mock
 from oslo.config import cfg
 
@@ -28,36 +30,12 @@ from neutron.tests import base
 CONF = cfg.CONF
 
 
-class FakeL2Plugin(object):
-    def create_port(self):
-        return True
+class FakeL2Plugin(mock.Mock):
+    pass
 
 
-class FakeL3Plugin(object):
-    i = 0
-
-    def create_router(self, context, router):
-        self.__class__.i += 1
-        router.update({'id': 'fake-object-%d' % self.__class__.i})
-        return router
-
-    def get_routers(self, *args, **kwargs):
-        return [{'id': 'fake-router-1'}, {'id': 'fake-router-2'}]
-
-    def delete_router(self, *args, **kwargs):
-        pass
-
-    def get_router(self, *args, **kwargs):
-        return True
-
-    def update_router(self, context, id, router):
-        return router
-
-    def add_router_interface(self, *args, **kwargs):
-        return True
-
-    def remove_router_interface(self, *args, **kwargs):
-        pass
+class FakeL3Plugin(mock.Mock):
+    pass
 
 
 class FakePolicyDriver(policy.SimplePolicyDriver):
@@ -78,8 +56,16 @@ class FakePluginManager(dict):
         super(FakePluginManager, self).__init__(self)
         self.l2_descriptor = 'fake-l2'
         self['fake-l2'] = FakeL2Plugin()
-        self['fake-l3-1'] = FakeL3Plugin()
-        self['fake-l3-2'] = FakeL3Plugin()
+        l3 = FakeL3Plugin()
+
+        def create_router(context, router):
+            router = copy.deepcopy(router)
+            router['id'] = uuidutils.generate_uuid()
+            return router
+
+        l3.create_router.side_effect = create_router
+        for desc in ('fake-l3-1', 'fake-l3-2'):
+            self[desc] = l3
 
 
 class InterceptorTestCase(base.BaseTestCase):
@@ -91,7 +77,7 @@ class InterceptorTestCase(base.BaseTestCase):
                                            'test_interceptor.FakePolicyDriver',
                           'niblick')
         m = mock.patch('neutron.plugins.niblick.plugin_manager.PluginManager',
-                       return_value=FakePluginManager())
+                       new=FakePluginManager)
         m.start()
         self.addCleanup(m.stop)
         self.context = context.get_admin_context()
@@ -105,25 +91,35 @@ class InterceptorTestCase(base.BaseTestCase):
         pm = self.interceptor._plugin_manager
         self.assertIsInstance(pm, FakePluginManager)
 
-    def test_get_all_plugins(self):
-        for plugin in self.interceptor._get_all_plugins(self.context, 'L3'):
-            self.assertIsInstance(plugin, FakeL3Plugin)
-
-    def test_l2_create_port(self):
-        self.assertTrue(self.interceptor.create_port())
-
-    def test_l3_create_router(self):
-        router = self.interceptor.create_router(self.context, {})
-        self.assertIn('id', router)
-
     def test_get_plugin(self):
         router = self.interceptor.create_router(self.context, {})
         plugin = self.interceptor._get_plugin(self.context, router['id'])
         self.assertIsInstance(plugin, FakeL3Plugin)
 
+    def test_get_all_plugins(self):
+        for plugin in self.interceptor._get_all_plugins(self.context, 'L3'):
+            self.assertIsInstance(plugin, FakeL3Plugin)
+
+    def test_l2(self):
+        self.interceptor.fake_l2_function('fake')
+        l2 = self.interceptor._get_l2_plugin()
+        l2.fake_l2_function.assert_called_once_with('fake')
+
+    @property
+    def l3(self):
+        return self.interceptor._plugin_manager['fake-l3-1']
+
+    def test_l3_create_router(self):
+        router = self.interceptor.create_router(self.context, {})
+        self.assertTrue(uuidutils.is_uuid_like(router.get('id')))
+        self.l3.create_router.assert_called_with(self.context,
+                                                 {'metadata': {}})
+
     def test_l3_delete_router(self):
         router = self.interceptor.create_router(self.context, {})
         self.interceptor.delete_router(self.context, router['id'])
+        self.l3.delete_router_assert_called_once_with(self.context,
+                                                      router['id'])
         self.assertRaises(exceptions.WrongObjectId,
                           self.interceptor.delete_router, self.context,
                           router['id'])
@@ -140,37 +136,78 @@ class InterceptorTestCase(base.BaseTestCase):
         self.assertNotEqual(router1['id'], router2['id'])
 
     def test_l3_get_routers(self):
-        self.interceptor.create_router(self.context, {})
-        self.interceptor.create_router(self.context, {})
-        list1 = [{'id': 'fake-router-1'}, {'id': 'fake-router-2'}]
+        list1 = [self.interceptor.create_router(self.context, {})
+                 for _i in range(2)]
+        self.l3.get_routers.return_value = list1
         list2 = self.interceptor.get_routers(self.context)
+        list1 = sorted(list1, key=lambda d: d['id'])
+        list2 = sorted(list2, key=lambda d: d['id'])
         self.assertListEqual(list1, list2)
+        self.assertEqual(2, self.l3.get_routers.call_count)
+        self.l3.get_routers.assert_called_with(self.context, None, None, None,
+                                               None, None, False)
 
     def test_l3_get_routers_count(self):
-        self.interceptor.create_router(self.context, {})
-        self.interceptor.create_router(self.context, {})
+        list1 = [self.interceptor.create_router(self.context, {})
+                 for _i in range(2)]
+        self.l3.get_routers.return_value = list1
         count = self.interceptor.get_routers_count(self.context)
         self.assertEqual(2, count)
+        self.assertEqual(2, self.l3.get_routers.call_count)
+        self.l3.get_routers.assert_called_with(self.context, None, None, None,
+                                               None, None, False)
+        self.assertEqual(0, self.l3.get_routers_count.call_count)
 
     def test_l3_get_router(self):
         router = self.interceptor.create_router(self.context, {})
+        self.l3.get_router.return_value = router
         res = self.interceptor.get_router(self.context, router['id'])
-        self.assertTrue(res)
+        self.assertDictEqual(router, res)
+        self.l3.get_router.assert_called_once_with(self.context, router['id'],
+                                                   None)
 
     def test_l3_update_router(self):
         router = self.interceptor.create_router(self.context, {})
+        self.l3.update_router.return_value = router
         res = self.interceptor.update_router(self.context, router['id'],
                                              router)
         self.assertDictEqual(router, res)
+        self.l3.update_router.assert_called_once_with(self.context,
+                                                      router['id'], router)
 
-    def test_add_router_interface(self):
+    def test_l3_add_router_interface(self):
         router = self.interceptor.create_router(self.context, {})
+        self.l3.add_router_interface.return_value = True
         res = self.interceptor.add_router_interface(self.context, router['id'],
                                                     {})
         self.assertTrue(res)
+        self.l3.add_router_interface.assert_called_once_with(self.context,
+                                                             router['id'], {})
 
-    def test_remove_router_interface(self):
+    def test_l3_remove_router_interface(self):
         router = self.interceptor.create_router(self.context, {})
+        self.l3.remove_router_interface.return_value = True
         res = self.interceptor.remove_router_interface(self.context,
                                                        router['id'], {})
-        self.assertIsNone(res)
+        self.assertTrue(res)
+        self.l3.remove_router_interface.assert_called_once_with(self.context,
+                                                                router['id'],
+                                                                {})
+
+    def test_l3_router_dissoc_floatingip(self):
+        router = self.interceptor.create_router(self.context, {})
+        obj = object()
+        self.interceptor.router_dissoc_floatingip(self.context, router['id'],
+                                                  obj)
+        self.l3.router_dissoc_floatingip.assert_called_once_with(self.context,
+                                                                 router['id'],
+                                                                 obj, None)
+
+    def test_l3_router_assoc_floatingip(self):
+        router = self.interceptor.create_router(self.context, {})
+        obj = object()
+        self.interceptor.router_assoc_floatingip(self.context, router['id'],
+                                                 obj)
+        self.l3.router_assoc_floatingip.assert_called_once_with(self.context,
+                                                                router['id'],
+                                                                obj, None)
