@@ -46,8 +46,10 @@ class ResourceManager(object):
     def deallocate_resource(self, context, object_id):
         res = self.get_resource(context, object_id)
         yield res
-        self._pm.release_resource(context, res['resource_id'])
-        db_api.binding_delete(context, res['object_id'])
+        try:
+            self._pm.release_resource(context, res['resource_id'])
+        finally:
+            db_api.binding_delete(context, res['object_id'])
 
     def bind_object(self, context, object_id, resource):
         resource['object_id'] = object_id
