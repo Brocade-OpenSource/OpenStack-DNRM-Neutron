@@ -92,7 +92,7 @@ class InterceptorTestCase(base.BaseTestCase):
         self.assertIsInstance(pm, FakePluginManager)
 
     def test_get_plugin(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         plugin = self.interceptor._get_plugin(self.context, router['id'])
         self.assertIsInstance(plugin, FakeL3Plugin)
 
@@ -110,13 +110,13 @@ class InterceptorTestCase(base.BaseTestCase):
         return self.interceptor._plugin_manager['fake-l3-1']
 
     def test_l3_create_router(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         self.assertTrue(uuidutils.is_uuid_like(router.get('id')))
         self.l3.create_router.assert_called_with(self.context,
-                                                 {'metadata': {}})
+                                                 {'router': {'metadata': {}}})
 
     def test_l3_delete_router(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         self.interceptor.delete_router(self.context, router['id'])
         self.l3.delete_router_assert_called_once_with(self.context,
                                                       router['id'])
@@ -125,18 +125,18 @@ class InterceptorTestCase(base.BaseTestCase):
                           router['id'])
 
     def test_l3_create_router_error_no_more_resources(self):
-        self.interceptor.create_router(self.context, {})
-        self.interceptor.create_router(self.context, {})
+        self.interceptor.create_router(self.context, {'router': {}})
+        self.interceptor.create_router(self.context, {'router': {}})
         self.assertRaises(exceptions.NoMoreResources,
                           self.interceptor.create_router, self.context, {})
 
     def test_l3_create_two_routers(self):
-        router1 = self.interceptor.create_router(self.context, {})
-        router2 = self.interceptor.create_router(self.context, {})
+        router1 = self.interceptor.create_router(self.context, {'router': {}})
+        router2 = self.interceptor.create_router(self.context, {'router': {}})
         self.assertNotEqual(router1['id'], router2['id'])
 
     def test_l3_get_routers(self):
-        list1 = [self.interceptor.create_router(self.context, {})
+        list1 = [self.interceptor.create_router(self.context, {'router': {}})
                  for _i in range(2)]
         self.l3.get_routers.return_value = list1
         list2 = self.interceptor.get_routers(self.context)
@@ -148,7 +148,7 @@ class InterceptorTestCase(base.BaseTestCase):
                                                None, None, False)
 
     def test_l3_get_routers_count(self):
-        list1 = [self.interceptor.create_router(self.context, {})
+        list1 = [self.interceptor.create_router(self.context, {'router': {}})
                  for _i in range(2)]
         self.l3.get_routers.return_value = list1
         count = self.interceptor.get_routers_count(self.context)
@@ -159,7 +159,7 @@ class InterceptorTestCase(base.BaseTestCase):
         self.assertEqual(0, self.l3.get_routers_count.call_count)
 
     def test_l3_get_router(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         self.l3.get_router.return_value = router
         res = self.interceptor.get_router(self.context, router['id'])
         self.assertDictEqual(router, res)
@@ -167,7 +167,7 @@ class InterceptorTestCase(base.BaseTestCase):
                                                    None)
 
     def test_l3_update_router(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         self.l3.update_router.return_value = router
         res = self.interceptor.update_router(self.context, router['id'],
                                              router)
@@ -176,7 +176,7 @@ class InterceptorTestCase(base.BaseTestCase):
                                                       router['id'], router)
 
     def test_l3_add_router_interface(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         self.l3.add_router_interface.return_value = True
         res = self.interceptor.add_router_interface(self.context, router['id'],
                                                     {})
@@ -185,7 +185,7 @@ class InterceptorTestCase(base.BaseTestCase):
                                                              router['id'], {})
 
     def test_l3_remove_router_interface(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         self.l3.remove_router_interface.return_value = True
         res = self.interceptor.remove_router_interface(self.context,
                                                        router['id'], {})
@@ -195,7 +195,7 @@ class InterceptorTestCase(base.BaseTestCase):
                                                                 {})
 
     def test_l3_router_dissoc_floatingip(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         obj = object()
         self.interceptor.router_dissoc_floatingip(self.context, router['id'],
                                                   obj)
@@ -204,7 +204,7 @@ class InterceptorTestCase(base.BaseTestCase):
                                                                  obj, None)
 
     def test_l3_router_assoc_floatingip(self):
-        router = self.interceptor.create_router(self.context, {})
+        router = self.interceptor.create_router(self.context, {'router': {}})
         obj = object()
         self.interceptor.router_assoc_floatingip(self.context, router['id'],
                                                  obj)

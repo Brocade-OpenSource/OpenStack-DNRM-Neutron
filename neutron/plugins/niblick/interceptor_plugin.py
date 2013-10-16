@@ -49,9 +49,9 @@ class Interceptor(l3_db.L3_NAT_db_mixin):
             context,
             ROUTER_OBJECT_TYPE
         ) as res:
-            metadata = router.get('metadata', {})
+            metadata = router['router'].get('metadata', {})
             metadata.update(res['resource_metadata'])
-            router['metadata'] = metadata
+            router['router']['metadata'] = metadata
             descriptor = res['resource_descriptor']
             plugin = self._plugin_manager[descriptor]
             obj = plugin.create_router(context, router)
